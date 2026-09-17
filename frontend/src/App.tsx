@@ -122,77 +122,115 @@ const AppContent: React.FC = () => {
         )}
       </div>
 
-      {/* Global DevSecOps Architecture Footer */}
+      {/* Global LogicLegend-Inspired DevSecOps Architecture Footer */}
       <footer style={{
-        backgroundColor: 'var(--bg-secondary)',
+        backgroundColor: '#050505',
         borderTop: '1px solid var(--border-subtle)',
-        padding: '3rem 1.5rem',
+        padding: '3.5rem 1.5rem 2rem',
         marginTop: 'auto',
+        position: 'relative',
       }}>
         <div className="container" style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '2rem',
-          marginBottom: '2rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: '2.5rem',
+          marginBottom: '2.5rem',
         }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, marginBottom: '0.75rem' }}>
-              <Layers size={20} color="var(--primary)" />
-              <span>JobBoard Cloud Platform</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 800, marginBottom: '0.85rem' }}>
+              <div style={{
+                width: '1.8rem',
+                height: '1.8rem',
+                borderRadius: '6px',
+                background: 'rgba(0, 194, 255, 0.15)',
+                border: '1px solid var(--cyan)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Layers size={14} color="var(--cyan)" />
+              </div>
+              <span style={{ fontSize: '1.15rem', color: '#ffffff', fontFamily: 'var(--font-display)', letterSpacing: '-0.03em' }}>
+                NexHire Platform
+              </span>
             </div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-              Built to demonstrate production cloud-native engineering: Kubernetes, Terraform, ArgoCD, Helm, DevSecOps, and full-stack TypeScript.
+              A high-performance cloud engineering platform demonstrating multi-stage Docker builds, Kubernetes EKS zero-trust, Helm, ArgoCD GitOps, and Redis telemetry.
             </p>
+            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span className="badge badge-remote" style={{ fontSize: '0.65rem' }}>
+                <span className="pulse-dot" /> 100% OPERATIONAL
+              </span>
+              <span className="badge badge-type" style={{ fontSize: '0.65rem' }}>
+                RENDER LIVE
+              </span>
+            </div>
           </div>
 
           <div>
-            <h4 style={{ fontSize: '0.9rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Architecture Flow</h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              <li>• GitHub Actions CI/CD</li>
-              <li>• Gitleaks & Trivy Scan</li>
-              <li>• AWS ECR & EKS Cluster</li>
-              <li>• ArgoCD GitOps Sync</li>
-              <li>• Canary Progressive Delivery</li>
+            <h4 className="mono-tag" style={{ marginBottom: '1rem', color: 'var(--cyan)' }}>
+              // 01. GITOPS PIPELINE
+            </h4>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <li>• GitHub Actions CI/CD Automated Test & Lint</li>
+              <li>• Trivy Security & Gitleaks Deep Secret Scan</li>
+              <li>• Syft Automated SBOM Generation</li>
+              <li>• ArgoCD Continuous GitOps Reconciliation</li>
+              <li>• Canary Progressive Rollout Engine</li>
             </ul>
           </div>
 
           <div>
-            <h4 style={{ fontSize: '0.9rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Observability</h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              <li><a href="/metrics" target="_blank" style={{ color: 'var(--primary)' }}>• Prometheus (/metrics)</a></li>
-              <li><a href="/health" target="_blank" style={{ color: 'var(--primary)' }}>• Health Check (/health)</a></li>
-              <li>• Grafana Dashboards</li>
-              <li>• Loki Structured Logs</li>
+            <h4 className="mono-tag" style={{ marginBottom: '1rem', color: 'var(--cyan)' }}>
+              // 02. OBSERVABILITY
+            </h4>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <li>
+                <a href="/metrics" target="_blank" style={{ color: 'var(--cyan)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                  • Prometheus Live Metrics (/metrics)
+                </a>
+              </li>
+              <li>
+                <a href="/health" target="_blank" style={{ color: 'var(--cyan)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                  • Health Probes API (/health)
+                </a>
+              </li>
+              <li>• Redis Cache Hit/Miss Telemetry</li>
+              <li>• Winston Structured JSON Logging</li>
             </ul>
           </div>
 
           <div>
-            <h4 style={{ fontSize: '0.9rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Security Standards</h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              <li>• Non-root multi-stage containers</li>
-              <li>• NetworkPolicies Zero-Trust</li>
-              <li>• GitHub Actions OIDC (No static keys)</li>
-              <li>• Syft SBOM Generation</li>
+            <h4 className="mono-tag" style={{ marginBottom: '1rem', color: 'var(--cyan)' }}>
+              // 03. ARCHITECTURE
+            </h4>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <li>• Non-Root Alpine Container Architecture</li>
+              <li>• Kubernetes NetworkPolicies Zero-Trust</li>
+              <li>• Horizontal Pod Autoscaler (HPA 70% CPU)</li>
+              <li>• High-Frequency In-Memory Database Fallback</li>
             </ul>
           </div>
         </div>
 
         <div className="container" style={{
           borderTop: '1px solid var(--border-subtle)',
-          paddingTop: '1.5rem',
+          paddingTop: '1.75rem',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          fontSize: '0.8rem',
+          fontSize: '0.78rem',
           color: 'var(--text-muted)',
           gap: '1rem',
+          fontFamily: 'var(--font-mono)',
         }}>
-          <div>© 2026 JobBoard DevSecOps Platform. All systems operational.</div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <span>Branch: main</span>
-            <span>Image Tag: Git SHA</span>
-            <span>Namespace: jobboard</span>
+          <div>© 2026 NEXHIRE.IO — LEARN. BUILD. EXPERIMENT. LEAD.</div>
+          <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+            <span>HOST: RENDER PROD</span>
+            <span>REGION: US-WEST</span>
+            <span>CLUSTER: K8S v1.30</span>
+            <span style={{ color: 'var(--cyan)' }}>LIVE: ONLINE</span>
           </div>
         </div>
       </footer>
