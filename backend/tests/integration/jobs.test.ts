@@ -108,4 +108,51 @@ describe('Jobs & Application API Integration Tests', () => {
     expect(savedRes.status).toBe(200);
     expect(savedRes.body.data.savedJobs.length).toBeGreaterThan(0);
   });
+
+  it('DELETE /api/jobs/:id/save should unsave a job', async () => {
+    const res = await request(app)
+      .delete('/api/jobs/job-003/save')
+      .set('Authorization', `Bearer ${applicantToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  it('PUT /api/jobs/:id should allow ADMIN to update job', async () => {
+    const res = await request(app)
+      .put('/api/jobs/job-001')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        title: 'Updated Senior Kubernetes Engineer',
+        salary_max: 210000,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.job.title).toBe('Updated Senior Kubernetes Engineer');
+  });
+
+  it('DELETE /api/jobs/:id should allow ADMIN to delete a job', async () => {
+    // Create a temporary job to delete
+    const createRes = await request(app)
+      .post('/api/jobs')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        company_id: 'cmp-001',
+        title: 'Temporary Job To Delete',
+        description: 'Will be deleted.',
+        location: 'Remote',
+      });
+    const tempId = createRes.body.data.job.id;
+
+    const delRes = await request(app)
+      .delete(`/api/jobs/${tempId}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(delRes.status).toBe(200);
+    expect(delRes.body.success).toBe(true);
+
+    const getRes = await request(app).get(`/api/jobs/${tempId}`);
+    expect(getRes.status).toBe(404);
+  });
 });
