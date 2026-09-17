@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import { JobCard } from '../components/JobCard';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { ApplicationModal } from '../components/ApplicationModal';
-import { Sparkles, Database, RefreshCw, Zap } from 'lucide-react';
+import { Sparkles, Database, RefreshCw, Zap, ShieldCheck, Terminal, Cpu, ArrowUpRight } from 'lucide-react';
 
 interface Props {
   onSelectJob: (job: Job) => void;
@@ -20,6 +20,7 @@ export const BrowseJobsPage: React.FC<Props> = ({ onSelectJob, savedJobIds, onTo
   const [loading, setLoading] = useState(true);
   const [isCached, setIsCached] = useState(false);
   const [activeApplyingJob, setActiveApplyingJob] = useState<Job | null>(null);
+  const [apiLatency, setApiLatency] = useState<number | null>(null);
 
   const [filters, setFilters] = useState({
     q: '',
@@ -28,8 +29,18 @@ export const BrowseJobsPage: React.FC<Props> = ({ onSelectJob, savedJobIds, onTo
     is_remote: undefined as boolean | undefined,
   });
 
+  const quickTags = [
+    { label: 'ALL ROLES', q: '', is_remote: undefined },
+    { label: 'KUBERNETES & EKS', q: 'Kubernetes', is_remote: undefined },
+    { label: 'DEVSECOPS & SECURITY', q: 'DevSecOps', is_remote: undefined },
+    { label: 'SRE & RELIABILITY', q: 'SRE', is_remote: undefined },
+    { label: 'FULL STACK CLOUD', q: 'React', is_remote: undefined },
+    { label: 'REMOTE ONLY', q: '', is_remote: true },
+  ];
+
   const fetchJobs = async () => {
     setLoading(true);
+    const start = performance.now();
     try {
       const params = new URLSearchParams();
       if (filters.q) params.append('q', filters.q);
@@ -47,6 +58,7 @@ export const BrowseJobsPage: React.FC<Props> = ({ onSelectJob, savedJobIds, onTo
       setJobs(res.data.jobs || []);
       setTotal(res.data.total || 0);
       setIsCached(!!res.data.cached);
+      setApiLatency(Math.round(performance.now() - start));
     } catch (err) {
       console.error('Failed to fetch jobs', err);
     } finally {
@@ -57,7 +69,7 @@ export const BrowseJobsPage: React.FC<Props> = ({ onSelectJob, savedJobIds, onTo
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchJobs();
-    }, 250);
+    }, 200);
     return () => clearTimeout(timer);
   }, [filters, page]);
 
@@ -74,80 +86,148 @@ export const BrowseJobsPage: React.FC<Props> = ({ onSelectJob, savedJobIds, onTo
   const totalPages = Math.ceil(total / 6) || 1;
 
   return (
-    <main className="container" style={{ padding: '2rem 1.5rem 4rem' }}>
-      {/* Hero Section */}
+    <main className="container" style={{ padding: '2rem 1.5rem 5rem' }}>
+      {/* Hero Section - Inspired by LogicLegend.in Minimalist High-Tech Aesthetic */}
       <section style={{
         textAlign: 'center',
-        padding: '3rem 1rem 3.5rem',
+        padding: '3.5rem 1rem 3rem',
         position: 'relative',
       }}>
+        {/* Top Micro Ticker */}
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.4rem 0.85rem',
-          backgroundColor: 'rgba(99, 102, 241, 0.12)',
-          border: '1px solid rgba(99, 102, 241, 0.3)',
+          gap: '0.6rem',
+          padding: '0.4rem 1rem',
+          backgroundColor: 'rgba(0, 194, 255, 0.05)',
+          border: '1px solid rgba(0, 194, 255, 0.25)',
           borderRadius: 'var(--radius-full)',
-          fontSize: '0.8rem',
-          color: '#818cf8',
-          marginBottom: '1rem',
-          fontWeight: 600,
+          fontSize: '0.72rem',
+          color: 'var(--cyan)',
+          marginBottom: '1.75rem',
+          fontFamily: 'var(--font-mono)',
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          boxShadow: '0 0 15px rgba(0, 194, 255, 0.15)',
         }}>
-          <Sparkles size={14} /> NexHire Cloud & DevSecOps Platform
+          <span className="pulse-dot-cyan" />
+          <span>NEXHIRE.IO // CLOUD TALENT MOVEMENT</span>
         </div>
+
+        {/* Hero Title */}
         <h1 style={{
-          fontSize: 'clamp(2rem, 4vw, 3rem)',
+          fontSize: 'clamp(2.4rem, 5.5vw, 4.2rem)',
           fontWeight: 800,
-          lineHeight: '1.2',
-          maxWidth: '850px',
-          margin: '0 auto 1rem',
-          letterSpacing: '-0.03em',
+          lineHeight: '1.08',
+          maxWidth: '920px',
+          margin: '0 auto 1.25rem',
+          letterSpacing: '-0.04em',
         }}>
-          Discover Premier <span style={{
-            background: 'linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>DevSecOps & Cloud</span> Engineering Roles
+          ENGINEER. DEPLOY. SCALE.{' '}
+          <span className="gradient-text-cyan">
+            LEAD.
+          </span>
         </h1>
+
+        {/* Subtitle */}
         <p style={{
-          fontSize: '1.1rem',
+          fontSize: 'clamp(1rem, 2vw, 1.2rem)',
           color: 'var(--text-secondary)',
-          maxWidth: '620px',
-          margin: '0 auto 1.5rem',
+          maxWidth: '680px',
+          margin: '0 auto 2.25rem',
+          lineHeight: '1.6',
+          fontWeight: 400,
         }}>
-          Enterprise career platform backed by PostgreSQL, Redis caching, robust REST API, and production observability.
+          The premiere talent ecosystem for Cloud Architects, Kubernetes SREs, and DevSecOps Engineers. Backed by automated observability and zero-trust engineering.
         </p>
 
-        {/* Live Redis Cache indicator */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          <span style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            padding: '0.25rem 0.6rem',
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: isCached ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)',
-            color: isCached ? '#10b981' : '#818cf8',
-            border: `1px solid ${isCached ? 'rgba(16, 185, 129, 0.3)' : 'rgba(99, 102, 241, 0.3)'}`,
-            fontWeight: 600,
-          }}>
-            {isCached ? <Zap size={13} /> : <Database size={13} />}
-            Redis Cache: {isCached ? 'HIT' : 'MISS (PostgreSQL Query)'}
-          </span>
+        {/* HUD Telemetry Strip */}
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.75rem',
+          maxWidth: '850px',
+          margin: '0 auto 2rem',
+        }}>
+          <div className="hud-box" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}>
+            <span className="pulse-dot" />
+            <span style={{ color: 'var(--text-secondary)' }}>API:</span>
+            <span style={{ color: '#10b981', fontWeight: 600 }}>200 OK</span>
+            {apiLatency !== null && <span style={{ color: 'var(--text-muted)' }}>({apiLatency}ms)</span>}
+          </div>
+
+          <div className="hud-box" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}>
+            {isCached ? <Zap size={14} color="var(--cyan)" /> : <Database size={14} color="#a5b4fc" />}
+            <span style={{ color: 'var(--text-secondary)' }}>CACHE:</span>
+            <span style={{ color: isCached ? 'var(--cyan)' : '#a5b4fc', fontWeight: 600 }}>
+              {isCached ? 'REDIS HIT' : 'DB STORE'}
+            </span>
+          </div>
+
+          <div className="hud-box" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}>
+            <ShieldCheck size={14} color="#10b981" />
+            <span style={{ color: 'var(--text-secondary)' }}>SECURITY:</span>
+            <span style={{ color: '#10b981', fontWeight: 600 }}>ZERO-TRUST</span>
+          </div>
+
+          <div className="hud-box" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}>
+            <Cpu size={14} color="var(--cyan)" />
+            <span style={{ color: 'var(--text-secondary)' }}>PIPELINES:</span>
+            <span style={{ color: '#ffffff', fontWeight: 700 }}>{total} ACTIVE</span>
+          </div>
+
           <button
             onClick={() => fetchJobs()}
             className="btn btn-secondary"
-            style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
-            title="Refresh from server"
+            style={{ padding: '0.5rem 0.85rem', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}
+            title="Refresh Telemetry"
           >
-            <RefreshCw size={12} /> Refresh
+            <RefreshCw size={13} /> SYNC
           </button>
+        </div>
+
+        {/* Interactive Quick Filter Chips */}
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          maxWidth: '900px',
+          margin: '0 auto',
+        }}>
+          {quickTags.map((tag) => {
+            const isActive = filters.q === tag.q && filters.is_remote === tag.is_remote;
+            return (
+              <button
+                key={tag.label}
+                onClick={() => {
+                  setFilters({ ...filters, q: tag.q, is_remote: tag.is_remote });
+                  setPage(1);
+                }}
+                className="btn"
+                style={{
+                  fontSize: '0.72rem',
+                  fontFamily: 'var(--font-mono)',
+                  letterSpacing: '0.08em',
+                  padding: '0.4rem 0.9rem',
+                  backgroundColor: isActive ? 'rgba(0, 194, 255, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                  borderColor: isActive ? 'var(--cyan)' : 'var(--border-subtle)',
+                  color: isActive ? 'var(--cyan)' : 'rgba(255, 255, 255, 0.7)',
+                  boxShadow: isActive ? '0 0 15px rgba(0, 194, 255, 0.3)' : 'none',
+                }}
+              >
+                {tag.label}
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      {/* Main Grid: Filters + Job Cards */}
-      <div className="jobs-layout-grid">
+      {/* Main Layout Grid: Filters + Job Cards */}
+      <div className="jobs-layout-grid" style={{ marginTop: '2rem' }}>
         <FilterSidebar
           filters={filters}
           onChange={(up) => { setFilters({ ...filters, ...up }); setPage(1); }}
@@ -157,23 +237,26 @@ export const BrowseJobsPage: React.FC<Props> = ({ onSelectJob, savedJobIds, onTo
 
         <div>
           {loading ? (
-            <div style={{ display: 'grid', gap: '1rem' }}>
+            <div style={{ display: 'grid', gap: '1.25rem' }}>
               {[1, 2, 3].map((n) => (
-                <div key={n} className="glass-panel" style={{ height: '140px', opacity: 0.5, animation: 'pulse 1.5s infinite' }} />
+                <div key={n} className="glass-panel" style={{ height: '160px', opacity: 0.4, animation: 'pulse 1.5s infinite' }} />
               ))}
             </div>
           ) : jobs.length === 0 ? (
-            <div className="glass-panel" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No matching jobs found</h3>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                Try adjusting your search criteria or resetting filters.
+            <div className="glass-panel" style={{ textAlign: 'center', padding: '4.5rem 2rem' }}>
+              <div className="mono-tag" style={{ marginBottom: '1rem', color: 'var(--cyan)' }}>
+                // NO MATCHING POSITION FOUND
+              </div>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '0.75rem', color: '#ffffff' }}>No Active Pipelines Match Filters</h3>
+              <p style={{ color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto 1.75rem', fontSize: '0.9rem' }}>
+                Reset your query or explore all platform roles across Kubernetes, DevSecOps, and Cloud Architecture.
               </p>
               <button onClick={handleResetFilters} className="btn btn-primary">
-                Clear Filters
+                Reset All Filters
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {jobs.map((job) => (
                 <JobCard
                   key={job.id}
@@ -191,27 +274,27 @@ export const BrowseJobsPage: React.FC<Props> = ({ onSelectJob, savedJobIds, onTo
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.5rem',
-                  marginTop: '1.5rem',
+                  gap: '0.75rem',
+                  marginTop: '2rem',
                 }}>
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                     className="btn btn-secondary"
-                    style={{ padding: '0.5rem 1rem' }}
+                    style={{ padding: '0.5rem 1.25rem', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}
                   >
-                    Previous
+                    ← PREV
                   </button>
-                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', padding: '0 0.5rem' }}>
-                    Page {page} of {totalPages}
+                  <span className="mono-tag" style={{ padding: '0 0.75rem', color: 'var(--text-primary)' }}>
+                    PAGE {page} OF {totalPages}
                   </span>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
                     className="btn btn-secondary"
-                    style={{ padding: '0.5rem 1rem' }}
+                    style={{ padding: '0.5rem 1.25rem', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}
                   >
-                    Next
+                    NEXT →
                   </button>
                 </div>
               )}
