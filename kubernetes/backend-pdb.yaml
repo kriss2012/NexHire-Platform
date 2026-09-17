@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: jobboard-backend-pdb
+  namespace: jobboard
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: jobboard-backend

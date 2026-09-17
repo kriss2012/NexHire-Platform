@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jobboard-config
+  namespace: jobboard
+  labels:
+    app.kubernetes.io/name: jobboard-config
+    app.kubernetes.io/part-of: jobboard-platform
+data:
+  NODE_ENV: "production"
+  PORT: "3001"
+  HOST: "0.0.0.0"
+  POSTGRES_HOST: "jobboard-postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "jobboard_db"
+  POSTGRES_USER: "jobboard_user"
+  REDIS_HOST: "jobboard-redis"
+  REDIS_PORT: "6379"
+  REDIS_URL: "redis://jobboard-redis:6379"
+  CORS_ORIGINS: "http://localhost:3000,https://app.example.com"
+  VITE_API_URL: "/api"

@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jobboard-pod-role
+  namespace: jobboard
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jobboard-pod-rolebinding
+  namespace: jobboard
+subjects:
+  - kind: ServiceAccount
+    name: jobboard-app-sa
+    namespace: jobboard
+roleRef:
+  kind: Role
+  name: jobboard-pod-role
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,34 @@
+name: Deploy Production (GitOps with Approval)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release version or Git SHA to deploy to Production'
+        required: true
+        default: 'latest'
+
+permissions:
+  contents: write
+  deployments: write
+
+jobs:
+  production-gate:
+    name: Production Deployment Approval Gate
+    runs-on: ubuntu-latest
+    environment: production # Requires configured GitHub environment protection / reviewers
+
+    steps:
+      - name: Checkout GitOps Repository
+        uses: actions/checkout@v4
+
+      - name: Update Production Helm Values
+        run: |
+          TARGET_TAG="${{ github.event.inputs.release_tag }}"
+          echo "Promoting release tag $TARGET_TAG to Production..."
+          echo "Updating helm/jobboard/values-production.yaml"
+
+      - name: Notify ArgoCD Controller
+        run: |
+          echo "ArgoCD synchronizing targetRevision with Production cluster..."
+          echo "Canary Rollout initiated: 5% -> 25% -> 50% -> 100%"

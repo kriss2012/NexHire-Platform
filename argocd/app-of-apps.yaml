@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jobboard-root-app
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: jobboard-root-app
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/example-org/jobboard-devops.git
+    targetRevision: main
+    path: argocd
+    directory:
+      recurse: false
+      include: "application-*.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

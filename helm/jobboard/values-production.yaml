@@ -1,0 +1,60 @@
+environment: "production"
+
+backend:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  pdb:
+    enabled: true
+    minAvailable: 1
+  env:
+    NODE_ENV: "production"
+    LOG_LEVEL: "info"
+
+frontend:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+
+postgres:
+  storage:
+    size: "10Gi"
+
+ingress:
+  hosts:
+    - host: "app.example.com"
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: backend
+        - path: /health
+          pathType: Exact
+          service: backend
+        - path: /ready
+          pathType: Exact
+          service: backend
+        - path: /live
+          pathType: Exact
+          service: backend
+        - path: /metrics
+          pathType: Exact
+          service: backend
+        - path: /
+          pathType: Prefix
+          service: frontend

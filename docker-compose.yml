@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # PostgreSQL 16 - Relational Database
+  # ============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: jobboard-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jobboard_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobboard_secure_password_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-jobboard_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/db/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jobboard_user} -d ${POSTGRES_DB:-jobboard_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - jobboard-net
+
+  # ============================================================================
+  # Redis 7 - Cache & In-Memory Store
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: jobboard-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - jobboard-net
+
+  # ============================================================================
+  # JobBoard Backend - Node.js TypeScript REST API
+  # ============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jobboard-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://${POSTGRES_USER:-jobboard_user}:${POSTGRES_PASSWORD:-jobboard_secure_password_dev_only}@postgres:5432/${POSTGRES_DB:-jobboard_db}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-jobboard_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobboard_secure_password_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-jobboard_db}
+      REDIS_URL: redis://redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production_min_32_characters_long_12345}
+      CORS_ORIGINS: http://localhost:3000,http://frontend:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - jobboard-net
+
+  # ============================================================================
+  # JobBoard Frontend - React + Vite + Nginx
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: jobboard-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: /api
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/ || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - jobboard-net
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  jobboard-net:
+    driver: bridge

@@ -1,0 +1,148 @@
+# ==============================================================================
+# JobBoard Helm Chart - Default Values
+# ==============================================================================
+
+environment: "production"
+
+global:
+  imageRegistry: "123456789012.dkr.ecr.us-east-1.amazonaws.com"
+  imagePullPolicy: "IfNotPresent"
+  namespace: "jobboard"
+
+serviceAccount:
+  create: true
+  name: "jobboard-app-sa"
+
+# ==============================================================================
+# Backend Configuration
+# ==============================================================================
+backend:
+  enabled: true
+  image:
+    repository: "jobboard-backend"
+    tag: "v1.0.0"
+  replicaCount: 2
+  port: 3001
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  pdb:
+    enabled: true
+    minAvailable: 1
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+  env:
+    NODE_ENV: "production"
+    LOG_LEVEL: "info"
+    RATE_LIMIT_WINDOW_MS: "900000"
+    RATE_LIMIT_MAX: "100"
+
+# ==============================================================================
+# Frontend Configuration
+# ==============================================================================
+frontend:
+  enabled: true
+  image:
+    repository: "jobboard-frontend"
+    tag: "v1.0.0"
+  replicaCount: 2
+  port: 3000
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 101
+
+# ==============================================================================
+# Backing Stores (PostgreSQL & Redis)
+# ==============================================================================
+postgres:
+  enabled: true
+  image:
+    repository: "postgres"
+    tag: "16-alpine"
+  port: 5432
+  storage:
+    size: "5Gi"
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+  auth:
+    database: "jobboard_db"
+    username: "jobboard_user"
+    password: "jobboard_secure_password_dev_only"
+
+redis:
+  enabled: true
+  image:
+    repository: "redis"
+    tag: "7-alpine"
+  port: 6379
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "300m"
+      memory: "512Mi"
+
+# ==============================================================================
+# Ingress Configuration (AWS ALB)
+# ==============================================================================
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-type: "ip"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: "/health"
+  hosts:
+    - host: "app.example.com"
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: backend
+        - path: /health
+          pathType: Exact
+          service: backend
+        - path: /ready
+          pathType: Exact
+          service: backend
+        - path: /live
+          pathType: Exact
+          service: backend
+        - path: /metrics
+          pathType: Exact
+          service: backend
+        - path: /
+          pathType: Prefix
+          service: frontend
+
+# ==============================================================================
+# Security Policies
+# ==============================================================================
+networkPolicy:
+  enabled: true

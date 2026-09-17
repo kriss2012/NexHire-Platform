@@ -1,0 +1,94 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  backend-ci:
+    name: Backend CI (Test & Lint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: backend/package.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint Codebase & Typecheck
+        run: npm run lint
+
+      - name: Run Backend Test Suite
+        run: npm run test:coverage
+        env:
+          NODE_ENV: test
+          JWT_SECRET: ci_test_secret_for_automated_github_actions_minimum_32_chars!
+
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage-report
+          path: backend/coverage/
+          retention-days: 14
+
+  frontend-ci:
+    name: Frontend CI (Test & Build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint & Typecheck
+        run: npm run lint
+
+      - name: Run Frontend Smoke Tests
+        run: npm test
+
+      - name: Build Production Bundle
+        run: npm run build
+        env:
+          VITE_API_URL: /api
+
+      - name: Upload Frontend Production Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7

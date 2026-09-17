@@ -1,0 +1,15 @@
+apiVersion: v2
+name: jobboard
+description: Production-grade Helm chart for JobBoard DevSecOps platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - jobboard
+  - kubernetes
+  - gitops
+  - devsecops
+home: https://github.com/example/jobboard-platform
+maintainers:
+  - name: DevSecOps Team
+    email: devsecops@jobboard.io

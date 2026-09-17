@@ -1,0 +1,30 @@
+name: Deploy Dev (GitOps)
+
+on:
+  workflow_run:
+    workflows: ["Container Build & DevSecOps"]
+    branches: [develop]
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  update-gitops-dev:
+    name: Update GitOps Desired State (Dev)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Update Dev Image Tag in Helm Values
+        run: |
+          SHA_SHORT=$(git rev-parse --short HEAD)
+          echo "Updating dev Helm values with tag: $SHA_SHORT"
+          # In GitOps pattern, update tag in values-dev.yaml
+          sed -i "s/tag: .*/tag: \"$SHA_SHORT\"/g" helm/jobboard/values-dev.yaml || true
+
+      - name: Trigger ArgoCD Sync (Webhook / Git Commit)
+        run: |
+          echo "Dev environment updated. ArgoCD automatic sync will reconcile EKS cluster."

@@ -1,0 +1,106 @@
+# ==============================================================================
+# Argo Rollouts - Production Progressive Canary Delivery with Automated Analysis
+# ==============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: jobboard-backend-rollout
+  namespace: jobboard
+  labels:
+    app: jobboard-backend
+    app.kubernetes.io/name: jobboard-backend
+spec:
+  replicas: 4
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: jobboard-backend
+  strategy:
+    canary:
+      # Stable Service receives 100% of standard traffic
+      stableService: jobboard-backend-stable
+      # Canary Service receives progressive test traffic
+      canaryService: jobboard-backend-canary
+      trafficRouting:
+        alb:
+          ingress: jobboard-ingress
+          servicePort: 3001
+      # Step-based canary promotion matching master prompt
+      steps:
+        # Step 1: Route 5% traffic to Canary version
+        - setWeight: 5
+        - pause: { duration: 5m }
+        # Step 2: Route 25% traffic to Canary
+        - setWeight: 25
+        - pause: { duration: 5m }
+        # Step 3: Route 50% traffic to Canary
+        - setWeight: 50
+        - pause: { duration: 5m }
+        # Step 4: Promote to 100% when metrics pass
+      analysis:
+        templates:
+          - templateName: success-rate
+        args:
+          - name: service-name
+            value: jobboard-backend-canary
+  template:
+    metadata:
+      labels:
+        app: jobboard-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+    spec:
+      serviceAccountName: jobboard-app-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: backend
+          image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/jobboard-backend:v1.0.0
+          ports:
+            - containerPort: 3001
+              name: http
+          envFrom:
+            - configMapRef:
+                name: jobboard-config
+            - secretRef:
+                name: jobboard-secret
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3001
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 3001
+            periodSeconds: 15
+
+---
+# AnalysisTemplate: Triggers Automated Rollback if Error Rate > 2%
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+  namespace: jobboard
+spec:
+  metrics:
+    - name: success-rate
+      interval: 30s
+      successCondition: result[0] >= 0.98
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus-k8s.monitoring.svc:9090
+          query: |
+            sum(rate(http_requests_total{status!~"5.*"}[2m])) 
+            / 
+            sum(rate(http_requests_total[2m]))

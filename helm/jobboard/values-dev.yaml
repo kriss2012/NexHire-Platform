@@ -1,0 +1,55 @@
+environment: "dev"
+
+backend:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+  autoscaling:
+    enabled: false
+  pdb:
+    enabled: false
+  env:
+    NODE_ENV: "development"
+    LOG_LEVEL: "debug"
+
+frontend:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "150m"
+      memory: "128Mi"
+
+postgres:
+  storage:
+    size: "2Gi"
+
+ingress:
+  hosts:
+    - host: "dev.jobboard.internal"
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: backend
+        - path: /health
+          pathType: Exact
+          service: backend
+        - path: /ready
+          pathType: Exact
+          service: backend
+        - path: /live
+          pathType: Exact
+          service: backend
+        - path: /metrics
+          pathType: Exact
+          service: backend
+        - path: /
+          pathType: Prefix
+          service: frontend

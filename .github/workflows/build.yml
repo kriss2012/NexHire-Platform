@@ -1,0 +1,121 @@
+name: Container Build & DevSecOps
+
+on:
+  push:
+    branches: [main, develop]
+
+permissions:
+  id-token: write # Required for AWS OIDC authentication
+  contents: read
+  security-events: write
+
+env:
+  AWS_REGION: us-east-1
+  ECR_ROLE_ARN: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+  BACKEND_IMAGE: jobboard-backend
+  FRONTEND_IMAGE: jobboard-frontend
+
+jobs:
+  build-and-push:
+    name: Build, Scan & Push to AWS ECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set Image Tag (Git SHA)
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      # AWS Authentication using OIDC (No static access keys committed)
+      - name: Authenticate to AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        if: env.ECR_ROLE_ARN != ''
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to AWS ECR
+        id: login-ecr
+        if: env.ECR_ROLE_ARN != ''
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Setup Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build Backend Image
+      - name: Build Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          load: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ steps.vars.outputs.sha_short }}
+            ${{ env.BACKEND_IMAGE }}:latest
+
+      # Build Frontend Image
+      - name: Build Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          load: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ steps.vars.outputs.sha_short }}
+            ${{ env.FRONTEND_IMAGE }}:latest
+
+      # Container Vulnerability Scan (Trivy)
+      - name: Run Trivy Container Scan on Backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.BACKEND_IMAGE }}:${{ steps.vars.outputs.sha_short }}'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Trivy Container Scan on Frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.FRONTEND_IMAGE }}:${{ steps.vars.outputs.sha_short }}'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+      # SBOM Generation (Syft)
+      - name: Generate SBOM for Backend
+        uses: anchore/sbom-action@v0
+        with:
+          image: '${{ env.BACKEND_IMAGE }}:${{ steps.vars.outputs.sha_short }}'
+          format: 'spdx-json'
+          output-file: 'backend-sbom.spdx.json'
+
+      - name: Generate SBOM for Frontend
+        uses: anchore/sbom-action@v0
+        with:
+          image: '${{ env.FRONTEND_IMAGE }}:${{ steps.vars.outputs.sha_short }}'
+          format: 'spdx-json'
+          output-file: 'frontend-sbom.spdx.json'
+
+      - name: Upload SBOM Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-reports
+          path: |
+            backend-sbom.spdx.json
+            frontend-sbom.spdx.json
+          retention-days: 30
+
+      # Push to AWS ECR if credentials present
+      - name: Tag and Push Images to ECR
+        if: env.ECR_ROLE_ARN != ''
+        run: |
+          REGISTRY="${{ steps.login-ecr.outputs.registry }}"
+          TAG="${{ steps.vars.outputs.sha_short }}"
+
+          docker tag ${{ env.BACKEND_IMAGE }}:$TAG $REGISTRY/${{ env.BACKEND_IMAGE }}:$TAG
+          docker tag ${{ env.FRONTEND_IMAGE }}:$TAG $REGISTRY/${{ env.FRONTEND_IMAGE }}:$TAG
+
+          docker push $REGISTRY/${{ env.BACKEND_IMAGE }}:$TAG
+          docker push $REGISTRY/${{ env.FRONTEND_IMAGE }}:$TAG

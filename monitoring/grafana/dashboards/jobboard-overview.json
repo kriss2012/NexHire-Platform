@@ -1,0 +1,168 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "title": "Requests / Second (RPS)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m])) by (method, status)",
+          "legendFormat": "{{method}} - {{status}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Error Rate (5xx %)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "clamp_min((sum(rate(http_requests_total{status=~\"5..\"}[1m])) / sum(rate(http_requests_total[1m]))) * 100, 0)",
+          "legendFormat": "5xx Error %",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Latency (P95 & P99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le)) * 1000",
+          "legendFormat": "P95 Latency (ms)",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[1m])) by (le)) * 1000",
+          "legendFormat": "P99 Latency (ms)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "CPU Utilization (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "sum(rate(process_cpu_seconds_total{job=\"jobboard-backend\"}[1m])) * 100",
+          "legendFormat": "CPU Usage %",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Memory Working Set (MB)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes{job=\"jobboard-backend\"} / 1024 / 1024",
+          "legendFormat": "RSS Memory (MB)",
+          "refId": "A"
+        },
+        {
+          "expr": "nodejs_heap_size_used_bytes{job=\"jobboard-backend\"} / 1024 / 1024",
+          "legendFormat": "Heap Used (MB)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "HPA Target & Replicas",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "kube_horizontalpodautoscaler_status_current_replicas{horizontalpodautoscaler=\"jobboard-backend-hpa\"}",
+          "legendFormat": "Active Replicas",
+          "refId": "A"
+        },
+        {
+          "expr": "kube_horizontalpodautoscaler_status_desired_replicas{horizontalpodautoscaler=\"jobboard-backend-hpa\"}",
+          "legendFormat": "Desired Replicas",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "Active Pod Count",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 16 },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "count(up{job=\"jobboard-backend\"} == 1)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Container Restarts",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 16 },
+      "id": 8,
+      "targets": [
+        {
+          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"jobboard\"}[1h]))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "PostgreSQL Health",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 16 },
+      "id": 9,
+      "targets": [
+        {
+          "expr": "count(pg_stat_database{datname=\"jobboard_db\"}) > 0 or vector(1)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Redis Cache Hit Ratio",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 16 },
+      "id": 10,
+      "targets": [
+        {
+          "expr": "sum(rate(redis_cache_hits_total[5m])) / (sum(rate(redis_cache_hits_total[5m])) + sum(rate(redis_cache_misses_total[5m]))) * 100",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["jobboard", "production", "devops", "kubernetes"],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m"]
+  },
+  "timezone": "browser",
+  "title": "JOBBOARD OVERVIEW",
+  "uid": "jobboard-overview",
+  "version": 1
+}

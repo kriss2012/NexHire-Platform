@@ -1,0 +1,28 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "jobboard.fullname" . }}-ingress
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "jobboard.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className }}
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "jobboard.fullname" $ }}-{{ .service }}
+                port:
+                  number: {{ if eq .service "backend" }}{{ $.Values.backend.port }}{{ else }}{{ $.Values.frontend.port }}{{ end }}
+          {{- end }}
+    {{- end }}
+{{- end }}

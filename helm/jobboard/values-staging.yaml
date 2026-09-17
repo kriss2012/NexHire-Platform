@@ -1,0 +1,59 @@
+environment: "staging"
+
+backend:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: "150m"
+      memory: "200Mi"
+    limits:
+      cpu: "400m"
+      memory: "400Mi"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+  pdb:
+    enabled: true
+    minAvailable: 1
+  env:
+    NODE_ENV: "staging"
+    LOG_LEVEL: "info"
+
+frontend:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+postgres:
+  storage:
+    size: "5Gi"
+
+ingress:
+  hosts:
+    - host: "staging.jobboard.internal"
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: backend
+        - path: /health
+          pathType: Exact
+          service: backend
+        - path: /ready
+          pathType: Exact
+          service: backend
+        - path: /live
+          pathType: Exact
+          service: backend
+        - path: /metrics
+          pathType: Exact
+          service: backend
+        - path: /
+          pathType: Prefix
+          service: frontend

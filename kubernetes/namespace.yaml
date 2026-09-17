@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jobboard
+  labels:
+    app.kubernetes.io/name: jobboard
+    app.kubernetes.io/part-of: jobboard-platform
+    environment: production

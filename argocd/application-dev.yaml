@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jobboard-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: jobboard-dev
+    environment: dev
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/example-org/jobboard-devops.git
+    targetRevision: develop
+    path: helm/jobboard
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: jobboard-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,63 @@
+groups:
+  - name: jobboard-alerts
+    rules:
+      # Alert: 5xx error rate > 5% for 5 minutes
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "High HTTP 5xx error rate detected ({{ $value | printf \"%.2f\" }}%)"
+          description: "Over 5% of HTTP requests to JobBoard backend resulted in 5xx server errors over the last 5 minutes."
+
+      # Alert: P95 latency > 500ms
+      - alert: HighP95Latency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High P95 latency ({{ $value | printf \"%.2f\" }}s)"
+          description: "95th percentile latency exceeds 500ms for 5 consecutive minutes."
+
+      # Alert: Application Unavailable
+      - alert: ApplicationUnavailable
+        expr: up{job="jobboard-backend"} == 0
+        for: 1m
+        labels:
+          severity: page
+          service: backend
+        annotations:
+          summary: "JobBoard Backend instance unreachable"
+          description: "Prometheus cannot scrape the /metrics endpoint on JobBoard backend instance."
+
+      # Alert: Pod Restart Spike
+      - alert: PodRestartSpike
+        expr: increase(kube_pod_container_status_restarts_total{namespace="jobboard"}[10m]) > 3
+        for: 2m
+        labels:
+          severity: critical
+          service: kubernetes
+        annotations:
+          summary: "Rapid container restart spike detected"
+          description: "Container in pod {{ $labels.pod }} restarted more than 3 times in 10 minutes."
+
+      # Alert: High CPU Target Exceeded
+      - alert: HighCPUUsage
+        expr: sum(rate(process_cpu_seconds_total{job="jobboard-backend"}[5m])) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Backend CPU utilization above 85%"
+          description: "CPU utilization has sustained over 85% for 5 minutes. Check HPA scaling status."
