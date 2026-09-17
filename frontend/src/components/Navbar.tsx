@@ -44,7 +44,7 @@ export const Navbar: React.FC<Props> = ({ currentView, setCurrentView, onOpenAut
           <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
           <span>CLUSTER: K8S v1.30</span>
         </div>
-        <div style={{ display: 'none', alignItems: 'center', gap: '1rem', md: { display: 'flex' } }}>
+        <div className="navbar-live-status">
           <span style={{ color: 'var(--cyan)' }}>LIVE PRODUCTION</span>
           <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
           <span>CANARY: 100% HEALTHY</span>
