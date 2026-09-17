@@ -26,7 +26,7 @@ describe('Applications API Integration Tests', () => {
     applicantToken = applicantLogin.body.data.token;
 
     const employerLogin = await request(app).post('/api/auth/login').send({
-      email: 'recruiter@cloudscale.io',
+      email: 'recruiter@techcorp.io',
       password: 'Employer123!',
     });
     employerToken = employerLogin.body.data.token;
