@@ -18,8 +18,13 @@
     "lint": "npm run lint:backend && npm run lint:frontend",
     "migrate": "npm --prefix backend run migrate",
     "seed": "npm --prefix backend run seed",
+    "render-build": "npm --prefix backend install --include=dev && npm --prefix backend run build && npm --prefix frontend install --include=dev && npm --prefix frontend run build",
     "validate": "powershell -ExecutionPolicy Bypass -File ./scripts/validate.ps1"
   },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "keywords": [
     "devops",
     "kubernetes",
