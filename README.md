@@ -474,6 +474,8 @@ jobboard-devops/
 │       ├── deploy-staging.yml    # Staging automated verification
 │       └── deploy-production.yml # Manual gate approval & GitOps release update
 │
+├── render.yaml                   # 100% Free Tier Render Web Service Blueprint
+├── vercel.json                   # Optional Decoupled Frontend static hosting configuration
 ├── docker-compose.yml
 ├── Makefile                      # Standardized make targets (install, test, lint, build, validate)
 ├── .env.example                  # Documented environment template with secure defaults
@@ -482,11 +484,212 @@ jobboard-devops/
 └── LICENSE                       # MIT License
 
 
-## 10. Final Message
+---
 
-> *"From Git Push to Production — Automated, Secure, Observable, Scalable, and Recoverable."*
+## 10. Genuinely Free Hosting Architecture
+
+NexHire is designed to run in production with **zero hosting cost** on supported, sustainable free-tier infrastructure.
+
+### Selected Hosting Platforms
+
+| Component | Selected Free Provider | Free Tier Specification | Cost |
+| :--- | :--- | :--- | :--- |
+| **Primary Full-Stack** | **Render (Free Web Service)** | 750 free instance hours/month, automated SSL, Git-push CI/CD | **$0 / month** |
+| **Alternative Frontend** | **Vercel (Hobby Tier)** | Unlimited static bandwidth, global edge CDN, instant deploy | **$0 / month** |
+| **Primary Database** | **Neon Serverless Postgres** | 0.5 GB storage, autoscaling compute, SSL connection pooling | **$0 / month** |
+| **Alternative Database** | **Supabase Postgres** | 500 MB Postgres instance, built-in pooling | **$0 / month** |
+| **Fail-Safe Fallback** | **Embedded Memory Store** | High-performance in-memory state if cloud DB is cold/offline | **$0 / month** |
+
+### Why Render Web Service Was Selected
+
+1. **Single Unified Free Deployment**: The Node.js Express server serves both the high-performance REST API (`/api/*`, `/health`, `/metrics`) and the compiled Vite React frontend (`frontend/dist`) as static assets with client-side SPA routing fallback. This allows the entire platform to operate inside **1 single free instance** without incurring multiple free-tier allocations or CORS edge cases.
+2. **Automatic HTTPS & Public Domain**: Render automatically generates and renews TLS/SSL certificates under `https://<service-name>.onrender.com`.
+3. **Automated Git Deployments**: Native integration with GitHub triggers automatic `npm install && npm run build && npm start` on every commit pushed to `main`.
+4. **Dynamic Port Binding**: Conforms directly with Render's dynamic `$PORT` environment variable binding on `0.0.0.0:$PORT`.
+5. **No Credit Card Barrier**: Free Web Service can be deployed without mandatory paid subscriptions.
+
+### Free-Tier Architecture Diagram
+
+```
+                     ┌──────────────────────────────────────────────┐
+                     │          Render Free Web Service             │
+                     │          (https://app.onrender.com)          │
+                     │                                              │
+                     │  ┌────────────────────┐   ┌────────────────┐ │
+                     │  │ Vite React SPA     │   │ Express REST   │ │
+                     │  │ (Compiled Static)  │   │ API & Metrics  │ │
+                     │  └─────────┬──────────┘   └───────┬────────┘ │
+                     │            │                      │          │
+                     │            └──────────┬───────────┘          │
+                     │                       │                      │
+                     │             Single Port 0.0.0.0:$PORT        │
+                     │                   Public HTTPS               │
+                     └───────────────────────┬──────────────────────┘
+                                             │
+                                             ▼
+                            ┌─────────────────────────────────┐
+                            │  Neon / Supabase PostgreSQL     │
+                            │        (Free Cloud Tier)        │
+                            │    + Local Memory DB Fallback   │
+                            └─────────────────────────────────┘
+```
 
 ---
 
-## 11. Author & License
-Crafted with precision for production-grade DevSecOps demonstration. Licensed under the [MIT License](LICENSE).
+## 11. Step-by-Step Free Deployment Guide
+
+### Option A: 1-Click Render Web Service (Single Full-Stack Deployment)
+
+1. Push your code to your GitHub repository:
+   ```bash
+   git init
+   git add .
+   git commit -m "feat: initial NexHire release"
+   git remote add origin https://github.com/<your-username>/<repo-name>.git
+   git push -u origin main
+   ```
+2. Log into [Render](https://render.com) (Free account).
+3. Click **New +** -> **Web Service**.
+4. Select your GitHub repository.
+5. Configure the service settings:
+   - **Name**: `nexhire-platform`
+   - **Runtime**: `Node`
+   - **Region**: `Oregon (US West)` or `Frankfurt (EU)`
+   - **Branch**: `main`
+   - **Build Command**: `npm install && npm run build`
+   - **Start Command**: `npm start`
+   - **Instance Type**: `Free`
+6. Under **Environment Variables**, add:
+   - `NODE_ENV`: `production`
+   - `JWT_SECRET`: *(Generate a 32+ char random string)*
+   - `DATABASE_URL`: *(Your Neon or Supabase PostgreSQL connection string, or leave blank to use in-memory store)*
+   - `CORS_ORIGINS`: `http://localhost:5173,http://localhost:3000`
+7. Click **Create Web Service**.
+8. Render will build and deploy. Once complete, your public URL is live at `https://nexhire-platform.onrender.com`.
+
+### Option B: Decoupled Deployment (Frontend on Vercel + Backend on Render)
+
+1. **Deploy Backend on Render**:
+   - Follow Option A with Build Command `npm --prefix backend run build` and Start Command `node backend/dist/server.js`.
+   - Copy your backend URL: `https://your-backend.onrender.com`.
+2. **Deploy Frontend on Vercel**:
+   - Log into [Vercel](https://vercel.com) (Hobby Free tier).
+   - Import your GitHub repo.
+   - Set Root Directory to `frontend`.
+   - Set Build Command to `npm run build` and Output Directory to `dist`.
+   - Add Environment Variable:
+     - `VITE_API_URL`: `https://your-backend.onrender.com/api`
+   - Click **Deploy**. Vercel will host the frontend with global edge CDN and automatic SPA routing rewrites configured via `vercel.json`.
+
+---
+
+## 12. Complete Environment Variables Reference
+
+| Variable | Description | Required? | Default / Example |
+| :--- | :--- | :--- | :--- |
+| `NODE_ENV` | Application environment mode | Optional | `production` |
+| `PORT` | HTTP port for server binding | Optional (Platform sets) | `5000` (Render sets `$PORT`) |
+| `HOST` | Interface IP binding | Optional | `0.0.0.0` |
+| `JWT_SECRET` | Secret key for signing JSON Web Tokens | **Required** in prod | Minimum 32 characters |
+| `JWT_EXPIRES_IN` | Token duration | Optional | `1h` |
+| `DATABASE_URL` | PostgreSQL connection string | Optional (Has fallback) | `postgresql://user:pass@ep-xyz.neon.tech/db?sslmode=require` |
+| `REDIS_URL` | Redis caching connection string | Optional (Has fallback) | `redis://localhost:6379` |
+| `CORS_ORIGINS` | Comma-separated allowed origins | Optional | `http://localhost:5173,http://localhost:3000` |
+| `VITE_API_URL` | Frontend API target endpoint | Optional | `/api` (unified) or full backend URL (decoupled) |
+| `RATE_LIMIT_MAX` | Max requests per rate limit window | Optional | `100` |
+| `RATE_LIMIT_WINDOW_MS` | Rate limiting window in milliseconds | Optional | `900000` (15 minutes) |
+
+---
+
+## 13. REST API Specification
+
+### Health & Observability Endpoints
+
+#### `GET /api/health` and `GET /api/v1/health`
+Standard service health endpoint complying with production monitoring guidelines.
+```json
+{
+  "status": "ok",
+  "service": "NexHire API",
+  "timestamp": "2026-09-17T02:58:00.271Z",
+  "uptimeSeconds": 45,
+  "version": "1.0.0",
+  "checks": {
+    "database": { "status": "healthy", "latencyMs": 2 },
+    "redis": { "status": "healthy", "latencyMs": 1 },
+    "memory": { "rssMb": 70.25, "heapUsedMb": 15.19 }
+  }
+}
+```
+
+#### `GET /metrics`
+Raw Prometheus scrape target exposing standard HTTP and process telemetry:
+- `http_requests_total`
+- `http_request_duration_seconds`
+- `http_active_requests`
+- `nodejs_heap_size_used_bytes`
+
+### Business Routes
+
+| Method | Path | Auth Required | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/login` | No | Authenticate user and obtain JWT token |
+| `POST` | `/api/auth/register` | No | Register new candidate or employer account |
+| `GET` | `/api/auth/me` | Yes (Bearer) | Get current authenticated user profile |
+| `POST` | `/api/auth/logout` | No | Invalidate client session |
+| `GET` | `/api/jobs` | No | Paginated list of active jobs with keyword, filter & remote search |
+| `GET` | `/api/jobs/:id` | No | Retrieve detailed job posting |
+| `POST` | `/api/jobs` | Yes (EMPLOYER/ADMIN) | Create a new job vacancy |
+| `POST` | `/api/jobs/:id/save` | Yes (CANDIDATE) | Bookmark a job to saved jobs list |
+| `DELETE` | `/api/jobs/:id/save` | Yes (CANDIDATE) | Remove job from saved list |
+| `GET` | `/api/saved-jobs` | Yes (CANDIDATE) | Retrieve all saved jobs for current user |
+| `GET` | `/api/applications` | Yes (CANDIDATE/EMPLOYER) | View applicant pipeline or submitted applications |
+| `POST` | `/api/applications` | Yes (CANDIDATE) | Submit job application with cover letter & resume link |
+| `GET` | `/api/admin/stats` | Yes (ADMIN) | Real-time system telemetry and cluster metrics |
+| `GET` | `/api/admin/users` | Yes (ADMIN) | List all registered accounts |
+
+---
+
+## 14. Comprehensive Troubleshooting Guide
+
+| Issue / Symptom | Root Cause | Exact Solution |
+| :--- | :--- | :--- |
+| **Build failed (`npm run build`)** | TypeScript compilation mismatch or missing dependencies | Run `npm install` in both root, `backend`, and `frontend`. Execute `tsc --noEmit` inside `backend` and `frontend` to inspect type errors. |
+| **Node version mismatch** | Environment using Node < 20 | Ensure Node `>= 20.0.0` is active. Check with `node -v`. On Render, set environment variable `NODE_VERSION=20.18.0`. |
+| **Python version mismatch** | Calling python commands in a pure Node project | NexHire is 100% TypeScript/Node.js. No Python runtime is needed. |
+| **Module not found (`Cannot find module...`)** | Incomplete dependency tree in production | Ensure build command is `npm install && npm run build`. Check `dependencies` in `backend/package.json` and ensure dependencies are not misplaced in `devDependencies`. |
+| **PORT error (`EADDRINUSE` or bound to wrong port)** | Hardcoded port preventing platform port assignment | NexHire dynamically reads `process.env.PORT` and binds to `0.0.0.0:$PORT`. Never hardcode `localhost` or static ports in production. |
+| **CORS error (`CORS policy: Not allowed by origin`)** | Frontend origin not present in backend CORS allowlist | In Render environment variables, add your frontend domain to `CORS_ORIGINS` (e.g. `https://nexhire-frontend.vercel.app`). Note that Render and Vercel domains are automatically allowed by wildcard match in `app.ts`. |
+| **Database connection failure** | Cloud PostgreSQL requires SSL encryption or has reached max pool | Ensure `DATABASE_URL` ends with `?sslmode=require`. NexHire's `Pool` auto-configures `ssl: { rejectUnauthorized: false }` for cloud providers (Neon/Supabase) with a conservative pool size of 10. If the database is sleeping, NexHire automatically falls back to the in-memory database store. |
+| **Environment variable missing** | `JWT_SECRET` not set in cloud platform | In Render or Vercel dashboard, verify that `JWT_SECRET` is populated. NexHire provides safe development defaults locally, but requires setting in production. |
+| **API unavailable (Cold Start / Sleeping)** | Free-tier instance sleeping after 15 minutes of inactivity | Render spins down inactive free web services. The first request will take ~30–45 seconds to wake up the container. The NexHire frontend displays a graceful loading state and sanitizes timeout errors. |
+| **SPA 404 on page refresh (`/browse`, `/employer`)** | Web server does not rewrite client-side routes to `index.html` | NexHire's Express server serves `index.html` for all non-API GET requests. For decoupled Vercel hosting, `vercel.json` includes the SPA rewrite rule `{ "source": "/(.*)", "destination": "/index.html" }`. |
+| **Static assets missing (`404 on /assets/...`)** | Static files not copied or wrong directory referenced | Ensure `npm run build:frontend` executed before starting backend. Verify that `frontend/dist` contains `index.html` and `assets/`. |
+| **Authentication failure (401 Unauthorized)** | Missing or malformed `Authorization: Bearer <token>` header | Check local storage key `jobboard_token`. In demo mode, click the 1-Click fast switcher buttons (`Admin`, `Employer`, `Candidate`) in the top navbar to instantly refresh demo credentials. |
+| **Deployment timeout** | Slow build exceeding free tier timeout limits | Ensure cache directories (`node_modules`, `.git`) are not duplicated. Both frontend and backend compile in under 5 seconds with standard `npm run build`. |
+| **Health check failure (`GET /api/health` 503)** | Critical service dependencies reporting failure | Check `/api/health` JSON output for `checks.database` and `checks.redis`. If backing services are down, NexHire operates in resilient `degraded` mode while keeping the HTTP status responsive. |
+
+---
+
+## 15. Known Free-Tier Limitations & Mitigations
+
+- **Free-Tier Inactivity Sleep**: Render free web services spin down after 15 minutes of zero traffic.
+  - *Mitigation*: The frontend includes warm-up handling and informs users if the service is spinning up, avoiding blank screens or raw technical stack traces.
+- **Database Storage Limits**: Neon provides 0.5 GB and Supabase provides 0.5 GB of free PostgreSQL storage.
+  - *Mitigation*: NexHire uses optimized schemas, pagination (`limit=10`), and an in-memory fallback store to ensure zero cost and zero storage overflow.
+- **Connection Limits**: Free databases limit concurrent connections to 10–20 connections.
+  - *Mitigation*: NexHire configures `max: 10` connections with `idleTimeoutMillis: 30000` to prevent connection exhaustion.
+
+---
+
+## 16. Final Status & Summary
+
+> **PRODUCTION READY — FREE HOSTING**
+> 
+> Tested, verified, and configured for 100% free cloud deployment on **Render Web Service** and **Neon / Supabase PostgreSQL**.
+
+---
+
+## 17. Author & License
+Crafted with precision for production-grade DevSecOps and free-tier cloud deployment demonstration. Licensed under the [MIT License](LICENSE).
+
