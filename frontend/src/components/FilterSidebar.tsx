@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, MapPin, SlidersHorizontal, RotateCcw } from 'lucide-react';
+import { Search, MapPin, SlidersHorizontal, RotateCcw, Globe, Check, Radio } from 'lucide-react';
 
 interface FilterState {
   q: string;
@@ -17,150 +17,169 @@ interface Props {
 
 export const FilterSidebar: React.FC<Props> = ({ filters, onChange, onReset, totalResults }) => {
   const jobTypes = [
-    { label: 'All Types', value: '' },
-    { label: 'Full Time', value: 'FULL_TIME' },
-    { label: 'Contract', value: 'CONTRACT' },
-    { label: 'Part Time', value: 'PART_TIME' },
-    { label: 'Internship', value: 'INTERNSHIP' },
+    { label: 'ALL PIPELINES', value: '' },
+    { label: 'FULL TIME', value: 'FULL_TIME' },
+    { label: 'CONTRACT / ADVISORY', value: 'CONTRACT' },
+    { label: 'PART TIME', value: 'PART_TIME' },
+    { label: 'INTERNSHIP & FELLOWSHIP', value: 'INTERNSHIP' },
   ];
 
   return (
-    <aside className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '1.1rem' }}>
-          <SlidersHorizontal size={18} color="var(--primary)" />
-          Filters
+    <aside className="glass-panel" style={{ padding: '1.6rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', height: 'fit-content' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.05rem', color: '#ffffff' }}>
+          <SlidersHorizontal size={17} color="var(--cyan)" />
+          <span>FILTER MATRIX</span>
         </div>
         <button
           onClick={onReset}
           className="btn btn-secondary"
-          style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-          title="Reset Filters"
+          style={{ padding: '0.3rem 0.65rem', fontSize: '0.72rem', fontFamily: 'var(--font-mono)' }}
+          title="Reset All Parameters"
         >
-          <RotateCcw size={13} /> Reset
+          <RotateCcw size={12} /> RESET
         </button>
+      </div>
+
+      {/* Results HUD */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0.5rem 0.85rem',
+        backgroundColor: 'rgba(0, 194, 255, 0.05)',
+        border: '1px solid rgba(0, 194, 255, 0.2)',
+        borderRadius: 'var(--radius-md)',
+        fontSize: '0.75rem',
+        fontFamily: 'var(--font-mono)',
+      }}>
+        <span style={{ color: 'var(--text-secondary)' }}>MATCHED PIPELINES:</span>
+        <span style={{ color: 'var(--cyan)', fontWeight: 700 }}>{totalResults}</span>
       </div>
 
       {/* Keyword Search */}
       <div>
-        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-          Search Keywords
+        <label className="mono-tag" style={{ display: 'block', marginBottom: '0.5rem' }}>
+          // 01. QUERY KEYWORDS
         </label>
         <div style={{ position: 'relative' }}>
-          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+          <Search size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
             className="input-field"
-            placeholder="e.g. Kubernetes, AWS, Go..."
+            placeholder="Kubernetes, Terraform, AWS, Go..."
             value={filters.q}
             onChange={(e) => onChange({ q: e.target.value })}
-            style={{ paddingLeft: '2.25rem' }}
+            style={{ paddingLeft: '2.4rem', fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}
           />
         </div>
       </div>
 
       {/* Location Filter */}
       <div>
-        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-          Location
+        <label className="mono-tag" style={{ display: 'block', marginBottom: '0.5rem' }}>
+          // 02. GEOGRAPHIC REGION
         </label>
         <div style={{ position: 'relative' }}>
-          <MapPin size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+          <MapPin size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
             className="input-field"
-            placeholder="e.g. San Francisco, Austin..."
+            placeholder="San Francisco, Austin, Remote..."
             value={filters.location}
             onChange={(e) => onChange({ location: e.target.value })}
-            style={{ paddingLeft: '2.25rem' }}
+            style={{ paddingLeft: '2.4rem', fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}
           />
         </div>
       </div>
 
       {/* Remote Toggle */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0.75rem',
-        backgroundColor: 'var(--bg-surface)',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--border-subtle)',
-      }}>
-        <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Remote Only</span>
-        <label style={{ position: 'relative', display: 'inline-block', width: '40px', height: '22px' }}>
-          <input
-            type="checkbox"
-            checked={!!filters.is_remote}
-            onChange={(e) => onChange({ is_remote: e.target.checked ? true : undefined })}
-            style={{ opacity: 0, width: 0, height: 0 }}
-          />
-          <span style={{
-            position: 'absolute',
-            cursor: 'pointer',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: filters.is_remote ? 'var(--primary)' : 'var(--bg-surface-hover)',
-            borderRadius: '22px',
-            transition: 'var(--transition-fast)',
-          }}>
-            <span style={{
-              position: 'absolute',
-              height: '16px',
-              width: '16px',
-              left: filters.is_remote ? '21px' : '3px',
-              bottom: '3px',
-              backgroundColor: 'white',
-              borderRadius: '50%',
-              transition: 'var(--transition-fast)',
-            }} />
-          </span>
-        </label>
-      </div>
-
-      {/* Employment Type Radios */}
       <div>
-        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.6rem' }}>
-          Employment Type
+        <label className="mono-tag" style={{ display: 'block', marginBottom: '0.5rem' }}>
+          // 03. WORKPLACE PROTOCOL
         </label>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          {jobTypes.map((t) => (
-            <label
-              key={t.value}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                padding: '0.4rem 0.6rem',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: filters.type === t.value ? 'var(--bg-surface-hover)' : 'transparent',
-                color: filters.type === t.value ? 'var(--primary)' : 'var(--text-secondary)',
-              }}
-            >
-              <input
-                type="radio"
-                name="employmentType"
-                checked={filters.type === t.value}
-                onChange={() => onChange({ type: t.value })}
-                style={{ accentColor: 'var(--primary)' }}
-              />
-              {t.label}
-            </label>
-          ))}
+        <div
+          onClick={() => onChange({ is_remote: filters.is_remote ? undefined : true })}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.75rem 1rem',
+            backgroundColor: filters.is_remote ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+            borderRadius: 'var(--radius-md)',
+            border: `1px solid ${filters.is_remote ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-subtle)'}`,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Globe size={15} color={filters.is_remote ? '#34d399' : 'var(--text-muted)'} />
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, fontFamily: 'var(--font-mono)', color: filters.is_remote ? '#34d399' : 'var(--text-primary)' }}>
+              100% REMOTE ONLY
+            </span>
+          </div>
+          <div style={{
+            width: '18px',
+            height: '18px',
+            borderRadius: '4px',
+            border: `1px solid ${filters.is_remote ? '#10b981' : 'var(--border-subtle)'}`,
+            backgroundColor: filters.is_remote ? '#10b981' : 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            {filters.is_remote && <Check size={12} color="#050505" strokeWidth={3} />}
+          </div>
         </div>
       </div>
 
-      {/* Count display */}
-      <div style={{
-        marginTop: 'auto',
-        paddingTop: '1rem',
-        borderTop: '1px solid var(--border-subtle)',
-        fontSize: '0.8rem',
-        color: 'var(--text-muted)',
-        textAlign: 'center',
-      }}>
-        Showing <strong style={{ color: 'var(--text-primary)' }}>{totalResults}</strong> matching roles
+      {/* Job Type Radio List */}
+      <div>
+        <label className="mono-tag" style={{ display: 'block', marginBottom: '0.6rem' }}>
+          // 04. ENGAGEMENT TYPE
+        </label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          {jobTypes.map((t) => {
+            const isSelected = filters.type === t.value;
+            return (
+              <div
+                key={t.value}
+                onClick={() => onChange({ type: t.value })}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.65rem',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: isSelected ? 'rgba(0, 194, 255, 0.08)' : 'transparent',
+                  border: `1px solid ${isSelected ? 'rgba(0, 194, 255, 0.3)' : 'transparent'}`,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <div style={{
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  border: `1px solid ${isSelected ? 'var(--cyan)' : 'var(--border-subtle)'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--cyan)' }} />}
+                </div>
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontFamily: 'var(--font-mono)',
+                  color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                  fontWeight: isSelected ? 600 : 400,
+                }}>
+                  {t.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </aside>
   );
