@@ -8,7 +8,8 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --no-audit
+RUN npm ci --no-audit || npm install --no-audit
+RUN npm install --no-save @rollup/rollup-linux-x64-musl
 
 COPY tsconfig*.json ./
 COPY vite.config.ts ./
