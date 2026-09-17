@@ -21,7 +21,7 @@ async function bootstrap() {
   await seedDatabase();
 
   const server = app.listen(config.port, config.host, () => {
-    logger.info(`JobBoard Backend API listening on http://${config.host}:${config.port}`, {
+    logger.info(`NexHire Backend API listening on http://${config.host}:${config.port}`, {
       environment: config.env,
       nodeVersion: process.version,
       pid: process.pid,
