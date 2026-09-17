@@ -2,8 +2,11 @@
 
 > A production-grade, 100% free-tier deployable cloud talent platform demonstrating modern full-stack TypeScript, React 18, PostgreSQL, Redis caching, GitHub Actions CI/CD, Docker, Kubernetes, Helm, ArgoCD GitOps, DevSecOps, Prometheus & Grafana observability, and automated canary rollback.
 
-[![CI Pipeline](https://img.shields.io/badge/CI-Passing-10b981?style=for-the-badge&logo=github-actions)](https://github.com/example-org/jobboard-devops/actions)
-[![Security Scan](https://img.shields.io/badge/Security-Trivy%20%26%20Gitleaks%20Passed-6366f1?style=for-the-badge&logo=shield)](https://github.com/example-org/jobboard-devops/actions)
+🚀 **Live Production Deployment**: [NexHire | Cloud & DevSecOps Engineering Platform](https://nexhire-platform.onrender.com/)
+
+[![Live Deployment](https://img.shields.io/badge/Render-Live%20Production-00C2FF?style=for-the-badge&logo=render&logoColor=white)](https://nexhire-platform.onrender.com/)
+[![CI Pipeline](https://img.shields.io/badge/CI-Passing-10b981?style=for-the-badge&logo=github-actions)](https://github.com/kriss2012/NexHire-Platform/actions)
+[![Security Scan](https://img.shields.io/badge/Security-Trivy%20%26%20Gitleaks%20Passed-6366f1?style=for-the-badge&logo=shield)](https://github.com/kriss2012/NexHire-Platform/actions)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-1.30-326ce5?style=for-the-badge&logo=kubernetes)](https://kubernetes.io)
 [![GitOps](https://img.shields.io/badge/GitOps-ArgoCD%20Synced-f97316?style=for-the-badge&logo=argo)](https://argoproj.github.io/cd/)
 [![Terraform](https://img.shields.io/badge/IaC-Terraform%20AWS-7b42bc?style=for-the-badge&logo=terraform)](https://terraform.io)
