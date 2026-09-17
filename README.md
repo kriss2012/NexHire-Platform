@@ -1,6 +1,6 @@
-# JobBoard DevSecOps Platform
+# NexHire - Cloud Talent & DevSecOps Platform
 
-> A production-grade cloud-native job board platform demonstrating GitHub Actions CI/CD, Docker, AWS ECR, Terraform, Kubernetes, AWS EKS, Helm, ArgoCD GitOps, DevSecOps, Prometheus & Grafana observability, Horizontal Pod Autoscaling (HPA), and automated canary rollback.
+> A production-grade, 100% free-tier deployable cloud talent platform demonstrating modern full-stack TypeScript, React 18, PostgreSQL, Redis caching, GitHub Actions CI/CD, Docker, Kubernetes, Helm, ArgoCD GitOps, DevSecOps, Prometheus & Grafana observability, and automated canary rollback.
 
 [![CI Pipeline](https://img.shields.io/badge/CI-Passing-10b981?style=for-the-badge&logo=github-actions)](https://github.com/example-org/jobboard-devops/actions)
 [![Security Scan](https://img.shields.io/badge/Security-Trivy%20%26%20Gitleaks%20Passed-6366f1?style=for-the-badge&logo=shield)](https://github.com/example-org/jobboard-devops/actions)
