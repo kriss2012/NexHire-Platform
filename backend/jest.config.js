@@ -9,7 +9,7 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/server.ts',
-    '!src/db/seed.ts',
+    '!src/db/**',
     '!src/types/**'
   ],
   coverageThreshold: {
