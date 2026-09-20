@@ -1,50 +1,548 @@
-# DevSecOps & Cloud Security Architecture
 
-Security is treated as a first-class requirement across every layer of the JobBoard platform: application code, dependencies, containers, Kubernetes runtime, and cloud infrastructure.
+# ◈ JOBBOARD DEVSECOPS PLATFORM
+## 3D Cloud Security & DevSecOps Architecture
 
----
+> **Security is not a feature added at the end.**
+> It is engineered as a first-class requirement across every layer of the platform.
 
-## 1. Production Security Checklist
+```text
+                         ╔══════════════════════════════╗
+                      ╔══╝   ☁️  CLOUD SECURITY  ╚══╗
+                   ╔══╝                              ╚══╗
+                ╔══╝       🔐 ZERO-TRUST CORE          ╚══╗
+             ╔══╝                                        ╚══╗
+          ╔══╝        ☸️ KUBERNETES RUNTIME              ╚══╗
+       ╔══╝                                                ╚══╗
+    ╔══╝              🐳 CONTAINER SECURITY                  ╚══╗
+ ╔══╝                                                        ╚══╗
+║                 🛡️ APPLICATION SECURITY                       ║
+╚════════════════════════════════════════════════════════════════╝
 
-| Check | Requirement | Implementation Status |
-|---|---|---|
-| `[x]` | **Zero Secrets in Git** | Enforced via `.gitignore`, `.env.example`, and pre-commit hooks |
-| `[x]` | **Automated Secret Scanning** | Gitleaks scanning in CI workflow on every PR & push |
-| `[x]` | **Vulnerability Scanning** | Trivy scanning filesystem dependencies and container images |
-| `[x]` | **Software Bill of Materials** | Syft generating `spdx-json` SBOM attached to CI artifacts |
-| `[x]` | **Non-Root Containers** | Backend UID `10001` (`nodejs`), Frontend UID `101` (`nginx`) |
-| `[x]` | **Least-Privilege Kubernetes RBAC** | ServiceAccount with read-only ConfigMap access; no cluster-admin |
-| `[x]` | **Zero-Trust NetworkPolicies** | Default deny-all; Postgres and Redis blocked from external internet |
-| `[x]` | **Resource Quotas & Limits** | CPU and RAM requests/limits defined on every container workload |
-| `[x]` | **Password Security** | Passwords hashed with `bcryptjs` (salt rounds: 12) |
-| `[x]` | **Stateless Auth (JWT)** | Short-lived JWTs with strong HMAC-SHA256 signature verification |
-| `[x]` | **SQL Injection Protection** | 100% parameterized SQL queries (`$1`, `$2`) |
-| `[x]` | **HTTP Hardening** | Helmet middleware + Nginx security headers (`CSP`, `HSTS`, `nosniff`) |
-| `[x]` | **Rate Limiting** | Express rate limiting on `/api` (100 req/15m) and `/auth` (20 req/15m) |
-| `[x]` | **No Permanent AWS Keys** | GitHub Actions authenticating to AWS via OpenID Connect (OIDC) |
-| `[x]` | **Immutable Image Tags** | Docker images tagged with Git SHA; no `:latest` in production |
-| `[x]` | **Database Not Public** | PostgreSQL placed in private subnets, inaccessible from Internet |
-| `[x]` | **Sensitive Log Redaction** | Winston logger automatically redacts passwords, tokens, and secrets |
+        CODE → DEPENDENCIES → CONTAINERS → K8s → CLOUD
+                           ↓
+                    CONTINUOUS SECURITY
+
 
 ---
 
-## 2. Supply Chain Security (SBOM)
+🛡️ 01 — PRODUCTION SECURITY MATRIX
 
-Every container image built by GitHub Actions undergoes automated SBOM (Software Bill of Materials) generation using Anchore Syft.
+╭──────────────────────────────────────────────────────────────╮
+│                    🔐 SECURITY STATUS                        │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│   🔑 SECRETS              ████████████████████  PROTECTED    │
+│   🧬 DEPENDENCIES         ████████████████████  SCANNED      │
+│   🐳 CONTAINERS           ████████████████████  HARDENED     │
+│   ☸️ KUBERNETES            ████████████████████  ISOLATED     │
+│   🌐 NETWORK              ████████████████████  ZERO-TRUST   │
+│   ☁️ AWS                   ████████████████████  FEDERATED    │
+│   🗄️ DATABASE              ████████████████████  PRIVATE     │
+│   📋 LOGGING              ████████████████████  REDACTED     │
+│                                                              │
+╰──────────────────────────────────────────────────────────────╯
 
-### Local SBOM Generation
-```bash
-# Generate SBOM for Backend Container in SPDX JSON format
-syft jobboard-backend:latest -o spdx-json > backend-sbom.spdx.json
+Status	Security Control	Implementation
 
-# View high-level dependency package summary
-syft jobboard-backend:latest -o table
-```
+🟢	🔑 Zero Secrets in Git	.gitignore, .env.example, pre-commit hooks
+🟢	🕵️ Automated Secret Scanning	Gitleaks on every PR & push
+🟢	🔍 Vulnerability Scanning	Trivy filesystem + container image scanning
+🟢	📦 SBOM Generation	Syft → SPDX JSON artifacts
+🟢	👤 Non-Root Containers	Backend UID 10001, Frontend UID 101
+🟢	☸️ Least-Privilege RBAC	Read-only ConfigMap access; no cluster-admin
+🟢	🚫 Zero-Trust NetworkPolicies	Default deny-all
+🟢	📊 Resource Controls	CPU/RAM requests and limits
+🟢	🔐 Password Security	bcryptjs, 12 salt rounds
+🟢	🎫 JWT Authentication	Short-lived JWT + HMAC-SHA256
+🟢	💉 SQL Injection Protection	100% parameterized queries
+🟢	🪖 HTTP Hardening	Helmet + Nginx security headers
+🟢	🚦 Rate Limiting	/api 100/15m · /auth 20/15m
+🪪	AWS Identity	GitHub Actions → AWS OIDC
+🏷️	Immutable Images	Git SHA image tags
+🗄️	Private Database	PostgreSQL inside private subnets
+🧹	Log Redaction	Winston removes sensitive values
+
+
 
 ---
 
-## 3. Secret Management Strategy
-1. **Local Development**: `.env` (derived from safe template `.env.example`).
-2. **CI/CD Pipeline**: GitHub Secrets (`AWS_OIDC_ROLE_ARN`).
-3. **Cloud Infrastructure**: AWS IAM OIDC federation (zero stored secrets).
-4. **Kubernetes Workloads**: Encrypted Kubernetes Secrets, with optional integration for AWS Secrets Manager via External Secrets Operator (ESO).
+🧬 02 — SECURITY DEFENSE LAYERS
+
+┌───────────────────────┐
+                         │       ☁️ AWS CLOUD     │
+                         │   IAM • VPC • WAF     │
+                         └───────────┬───────────┘
+                                     │
+                         ┌───────────▼───────────┐
+                         │    ☸️ KUBERNETES       │
+                         │ RBAC • NetworkPolicy  │
+                         └───────────┬───────────┘
+                                     │
+                         ┌───────────▼───────────┐
+                         │      🐳 CONTAINERS      │
+                         │ Trivy • Non-Root • SBOM│
+                         └───────────┬───────────┘
+                                     │
+                         ┌───────────▼───────────┐
+                         │      🛡️ APPLICATION     │
+                         │ JWT • bcrypt • Helmet  │
+                         └───────────┬───────────┘
+                                     │
+                         ┌───────────▼───────────┐
+                         │        💻 CODE         │
+                         │ Gitleaks • Hooks • CI  │
+                         └───────────────────────┘
+
+                     DEFENSE-IN-DEPTH ARCHITECTURE
+
+
+---
+
+🔐 03 — ZERO-TRUST SECURITY MODEL
+
+┌──────────────────────────┐
+                 │       🌐 INTERNET         │
+                 └────────────┬─────────────┘
+                              │
+                              ▼
+                    ┌───────────────────┐
+                    │ 🛡️ EDGE SECURITY  │
+                    │ Helmet / Nginx    │
+                    │ Rate Limiting     │
+                    └─────────┬─────────┘
+                              │
+                              ▼
+                    ┌───────────────────┐
+                    │ ☸️ K8s INGRESS    │
+                    └─────────┬─────────┘
+                              │
+                 ┌────────────┴────────────┐
+                 ▼                         ▼
+        ┌─────────────────┐       ┌─────────────────┐
+        │ 🖥️ FRONTEND     │       │ ⚙️ BACKEND      │
+        │ UID: 101        │       │ UID: 10001      │
+        │ Nginx           │       │ Node.js         │
+        └────────┬────────┘       └────────┬────────┘
+                 │                         │
+                 │                  ┌──────┴──────┐
+                 │                  ▼             ▼
+                 │          ┌─────────────┐ ┌─────────────┐
+                 │          │ 🗄️ POSTGRES │ │ 🔴 REDIS   │
+                 │          │ PRIVATE     │ │ PRIVATE     │
+                 │          └─────────────┘ └─────────────┘
+                 │
+                 └─────── 🚫 NO DIRECT INTERNET ACCESS ───────┘
+
+Network Security Principle
+
+DEFAULT
+   │
+   ▼
+🚫 DENY ALL
+   │
+   ├──────► Frontend → Backend       ✅ ALLOWED
+   │
+   ├──────► Backend → PostgreSQL     ✅ ALLOWED
+   │
+   ├──────► Backend → Redis          ✅ ALLOWED
+   │
+   ├──────► Internet → PostgreSQL   ❌ BLOCKED
+   │
+   └──────► Internet → Redis        ❌ BLOCKED
+
+
+---
+
+🐳 04 — CONTAINER HARDENING
+
+🐳 SECURE CONTAINER
+              ╭────────────────────────╮
+           ╭──┤                        ├──╮
+        ╭──┤  │   🔒 NON-ROOT USER     │  ├──╮
+       │  │  │   UID: 10001 / 101     │  │  │
+       │  │  │                        │  │  │
+       │  │  │   🔍 TRIVY SCANNED     │  │  │
+       │  │  │                        │  │  │
+       │  │  │   📦 SBOM GENERATED    │  │  │
+       │  │  │                        │  │  │
+       │  │  │   🏷️ SHA TAGGED        │  │  │
+       │  │  │                        │  │  │
+       ╰──┤  ╰────────────────────────╯  ├──╯
+          ╰───────────────────────────────╯
+
+                 🚫 NO :latest IN PROD
+
+Immutable Image Strategy
+
+SOURCE CODE
+     │
+     ▼
+┌──────────────┐
+│   BUILD CI   │
+└──────┬───────┘
+       │
+       ├──────► 🔍 Trivy Scan
+       │
+       ├──────► 📦 Syft SBOM
+       │
+       ├──────► 🔐 Gitleaks
+       │
+       ▼
+┌────────────────────┐
+│ Docker Image       │
+│ SHA: abc123...     │
+└─────────┬──────────┘
+          │
+          ▼
+     ☸️ DEPLOYMENT
+
+
+---
+
+📦 05 — SOFTWARE SUPPLY CHAIN SECURITY
+
+Every production container passes through the following security pipeline:
+
+👨‍💻 DEVELOPER
+             │
+             ▼
+        📂 SOURCE CODE
+             │
+             ▼
+       ┌───────────────┐
+       │ 🔑 GITLEAKS   │
+       │ Secret Scan   │
+       └───────┬───────┘
+               │
+               ▼
+       ┌───────────────┐
+       │ 🔍 TRIVY      │
+       │ CVE Scanning  │
+       └───────┬───────┘
+               │
+               ▼
+       ┌───────────────┐
+       │ 📦 SYFT       │
+       │ SBOM Creation │
+       └───────┬───────┘
+               │
+               ▼
+       ┌───────────────┐
+       │ 🐳 IMAGE      │
+       │ SHA IMMUTABLE │
+       └───────┬───────┘
+               │
+               ▼
+          ☸️ PRODUCTION
+
+
+---
+
+📋 06 — SBOM GENERATION
+
+Every container image receives a machine-readable Software Bill of Materials.
+
+Local Generation
+
+# Generate SPDX JSON SBOM
+syft jobboard-backend:latest \
+  -o spdx-json \
+  > backend-sbom.spdx.json
+
+# Display dependency summary
+syft jobboard-backend:latest \
+  -o table
+
+SBOM Flow
+
+🐳 CONTAINER
+     │
+     ▼
+   SYFT
+     │
+     ▼
+📦 SOFTWARE INVENTORY
+     │
+     ├── Libraries
+     ├── Packages
+     ├── Versions
+     ├── Dependencies
+     └── Components
+     │
+     ▼
+📄 SPDX JSON
+     │
+     ▼
+☁️ CI ARTIFACT
+
+
+---
+
+🔑 07 — SECRET MANAGEMENT ARCHITECTURE
+
+🔐 SECRET LIFECYCLE
+
+ ┌──────────────────┐
+ │ 💻 LOCAL         │
+ │ Development      │
+ │                  │
+ │ .env             │
+ │ .env.example     │
+ └────────┬─────────┘
+          │
+          │ NEVER COMMIT
+          ▼
+ ┌──────────────────┐
+ │ 🚀 CI/CD         │
+ │ GitHub Actions   │
+ │                  │
+ │ GitHub Secrets   │
+ └────────┬─────────┘
+          │
+          │ OIDC
+          ▼
+ ┌──────────────────┐
+ │ ☁️ AWS IAM       │
+ │                  │
+ │ Temporary        │
+ │ Credentials      │
+ └────────┬─────────┘
+          │
+          ▼
+ ┌──────────────────────────┐
+ │ ☸️ KUBERNETES            │
+ │                          │
+ │ Encrypted Secrets        │
+ │          +               │
+ │ AWS Secrets Manager      │
+ │          ↓               │
+ │ External Secrets (ESO)   │
+ └──────────────────────────┘
+
+Secret Security Rules
+
+🔴 NEVER
+   ├── Commit .env files
+   ├── Hard-code credentials
+   ├── Store AWS access keys in CI
+   ├── Print secrets into logs
+   └── Use credentials inside source code
+
+🟢 ALWAYS
+   ├── Use environment variables
+   ├── Use GitHub Secrets
+   ├── Use AWS OIDC
+   ├── Encrypt Kubernetes Secrets
+   └── Rotate sensitive credentials
+
+
+---
+
+☁️ 08 — AWS OIDC TRUST MODEL
+
+┌───────────────────────┐
+│       GitHub Actions  │
+│                       │
+│    🚀 CI/CD Pipeline  │
+└───────────┬───────────┘
+            │
+            │ 🔐 OIDC TOKEN
+            ▼
+┌───────────────────────┐
+│        AWS IAM        │
+│                       │
+│   AssumeRoleWith      │
+│   WebIdentity         │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│   ☁️ AWS RESOURCES    │
+│                       │
+│ ECR • EKS • S3 • etc. │
+└───────────────────────┘
+
+          🚫 NO PERMANENT AWS ACCESS KEYS
+
+
+---
+
+🗄️ 09 — DATABASE SECURITY
+
+☁️ AWS VPC
+                            │
+                ┌───────────┴───────────┐
+                │                       │
+          🌐 PUBLIC SUBNET        🔒 PRIVATE SUBNET
+                │                       │
+          Load Balancer             PostgreSQL
+                │                       │
+                ▼                       │
+           Backend API ────────────────┘
+                │
+                └──────────► Redis
+
+                 🚫 INTERNET
+                     │
+                     ├──────X──────► PostgreSQL
+                     │
+                     └──────X──────► Redis
+
+PostgreSQL is isolated inside private networking and is not directly exposed to the public Internet.
+
+
+---
+
+🔐 10 — APPLICATION SECURITY STACK
+
+╭────────────────────────────────────────────╮
+│            🛡️ APPLICATION SHIELD            │
+├────────────────────────────────────────────┤
+│                                            │
+│  🔐 bcryptjs                               │
+│       └── 12 Salt Rounds                   │
+│                                            │
+│  🎫 JWT                                    │
+│       └── Short-Lived Tokens               │
+│       └── HMAC-SHA256 Verification         │
+│                                            │
+│  💉 SQL Protection                         │
+│       └── Parameterized Queries             │
+│       └── $1 / $2 placeholders             │
+│                                            │
+│  🪖 Helmet                                 │
+│       └── HTTP Security Headers            │
+│                                            │
+│  🚦 Rate Limiting                          │
+│       ├── /api  → 100 req / 15 min         │
+│       └── /auth → 20 req / 15 min          │
+│                                            │
+│  🧹 Winston                                │
+│       └── Sensitive Log Redaction          │
+│                                            │
+╰────────────────────────────────────────────╯
+
+
+---
+
+🧠 11 — COMPLETE SECURITY PIPELINE
+
+🧑‍💻
+                              │
+                              ▼
+                     ┌─────────────────┐
+                     │    SOURCE CODE  │
+                     └────────┬────────┘
+                              │
+                     🔑 GITLEAKS
+                              │
+                              ▼
+                     ┌─────────────────┐
+                     │   CI SECURITY   │
+                     └────────┬────────┘
+                              │
+                    🔍 TRIVY + 📦 SYFT
+                              │
+                              ▼
+                     ┌─────────────────┐
+                     │ 🐳 CONTAINER    │
+                     │   HARDENING     │
+                     └────────┬────────┘
+                              │
+                       🏷️ SHA TAG
+                              │
+                              ▼
+                     ┌─────────────────┐
+                     │ ☸️ KUBERNETES   │
+                     │ RBAC + Network  │
+                     │ Policies        │
+                     └────────┬────────┘
+                              │
+                              ▼
+                     ┌─────────────────┐
+                     │ ☁️ AWS CLOUD    │
+                     │ IAM + VPC       │
+                     └────────┬────────┘
+                              │
+                              ▼
+                     🔒 PRODUCTION
+
+
+---
+
+🏆 SECURITY PRINCIPLES
+
+╔══════════════════════════════════════════════════════════╗
+║                  🛡️ SECURITY BY DESIGN                   ║
+╠══════════════════════════════════════════════════════════╣
+║                                                          ║
+║  01  🔐  ZERO TRUST                                     ║
+║      Never trust. Always verify.                        ║
+║                                                          ║
+║  02  👤  LEAST PRIVILEGE                                ║
+║      Give every component only what it needs.           ║
+║                                                          ║
+║  03  🧱  DEFENSE IN DEPTH                               ║
+║      Multiple independent security layers.               ║
+║                                                          ║
+║  04  📦  SUPPLY CHAIN VISIBILITY                         ║
+║      Know what software enters production.              ║
+║                                                          ║
+║  05  🔑  SECRET ISOLATION                                ║
+║      Credentials stay outside source code.               ║
+║                                                          ║
+║  06  🐳  RUNTIME HARDENING                               ║
+║      Non-root containers and restricted workloads.       ║
+║                                                          ║
+║  07  ☁️  CLOUD IDENTITY                                  ║
+║      Temporary credentials through OIDC.                 ║
+║                                                          ║
+║  08  📊  CONTINUOUS VERIFICATION                         ║
+║      Security checks execute throughout CI/CD.           ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝
+
+
+---
+
+🚀 JOBBOARD DEVSECOPS SECURITY STACK
+
+┌──────────────────────────────────────────┐
+       │              ☁️ AWS CLOUD                │
+       │        IAM • VPC • Private Subnets       │
+       └────────────────────┬─────────────────────┘
+                            │
+       ┌────────────────────▼─────────────────────┐
+       │             ☸️ KUBERNETES                │
+       │     RBAC • NetworkPolicy • Limits        │
+       └────────────────────┬─────────────────────┘
+                            │
+       ┌────────────────────▼─────────────────────┐
+       │              🐳 DOCKER                   │
+       │      Non-Root • SHA Tags • Trivy         │
+       └────────────────────┬─────────────────────┘
+                            │
+       ┌────────────────────▼─────────────────────┐
+       │            🛡️ APPLICATION                │
+       │ JWT • bcrypt • Helmet • Rate Limiting    │
+       └────────────────────┬─────────────────────┘
+                            │
+       ┌────────────────────▼─────────────────────┐
+       │             📦 SUPPLY CHAIN              │
+       │       Gitleaks • Syft • SBOM             │
+       └────────────────────┬─────────────────────┘
+                            │
+       ┌────────────────────▼─────────────────────┐
+       │             💻 SOURCE CODE               │
+       │       Secure Development Practices       │
+       └──────────────────────────────────────────┘
+
+
+                  🔐 SECURE BY DESIGN
+                       2026
+
+> JobBoard DevSecOps Platform
+
+Secure Code → Secure Build → Secure Container → Secure Runtime → Secure Cloud
+
+Defense in Depth • Zero Trust • Least Privilege • Continuous Security
