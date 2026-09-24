@@ -610,20 +610,12 @@ NexHire is designed to run in production with **zero hosting cost** on supported
 
 #### `GET /api/health` and `GET /api/v1/health`
 Standard service health endpoint complying with production monitoring guidelines.
-```json
-{
-  "status": "ok",
-  "service": "NexHire API",
-  "timestamp": "2026-09-17T02:58:00.271Z",
-  "uptimeSeconds": 45,
-  "version": "1.0.0",
-  "checks": {
-    "database": { "status": "healthy", "latencyMs": 2 },
-    "redis": { "status": "healthy", "latencyMs": 1 },
-    "memory": { "rssMb": 70.25, "heapUsedMb": 15.19 }
-  }
-}
-```
+Health Response Specification:
+- `status`: Overall service health status (`ok` or `degraded`).
+- `service`: Service identifier string (`NexHire API`).
+- `uptimeSeconds`: Cumulative uptime counter in seconds.
+- `version`: Application semantic release version.
+- `checks`: Subsystem health telemetry covering database connectivity, Redis cache latency, and RSS/heap memory metrics.
 
 #### `GET /metrics`
 Raw Prometheus scrape target exposing standard HTTP and process telemetry:
